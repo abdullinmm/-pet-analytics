@@ -1,0 +1,8 @@
+# Normalize default text
+* text=auto
+
+# Examples of explicit rules
+*.sln text eol=crlf
+*.sh  text eol=lf
+*.png binary
+*.jpg binary
