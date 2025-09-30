@@ -21,6 +21,11 @@ type health struct {
 	Time   string `json:"time"`
 }
 
+type createUserReq struct {
+	Email string `json:"email"`
+	Name  string `json:"name"`
+}
+
 func main() {
 	mux := http.NewServeMux()
 
@@ -47,24 +52,55 @@ func main() {
 	q := appdb.New(pool)
 
 	// GET /users/{id}
-	mux.HandleFunc("/users/", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodGet {
+	mux.HandleFunc("/users", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodPost:
+			var in createUserReq
+			if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
+				http.Error(w, "invalid json", http.StatusBadRequest)
+				return
+			}
+			if !strings.Contains(in.Email, "@") || len(in.Name) == 0 || len(in.Name) > 100 {
+				http.Error(w, "validation error", http.StatusBadRequest)
+				return
+			}
+			u, err := q.CreateUser(ctx, appdb.CreateUserParams{
+				Email: in.Email,
+				Name:  in.Name,
+			})
+			if err != nil {
+				http.Error(w, "conflict or db error", http.StatusConflict)
+				return
+			}
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusCreated)
+			_ = json.NewEncoder(w).Encode(u)
+		case http.MethodGet:
+			limit := int64(20)
+			offset := int64(0)
+			if v := r.URL.Query().Get("limit"); v != "" {
+				if n, err := strconv.ParseInt(v, 10, 64); err == nil && n > 0 && n <= 1000 {
+					limit = n
+				}
+			}
+			if v := r.URL.Query().Get("offset"); v != "" {
+				if n, err := strconv.ParseInt(v, 10, 64); err == nil && n >= 0 {
+					offset = n
+				}
+			}
+			users, err := q.ListUsers(ctx, appdb.ListUsersParams{
+				Limit:  int32(limit),
+				Offset: int32(offset),
+			})
+			if err != nil {
+				http.Error(w, "db error", http.StatusInternalServerError)
+				return
+			}
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(users)
+		default:
 			w.WriteHeader(http.StatusMethodNotAllowed)
-			return
 		}
-		idStr := strings.TrimPrefix(r.URL.Path, "/users/")
-		id, err := strconv.ParseInt(idStr, 10, 64)
-		if err != nil {
-			http.Error(w, "bad id", http.StatusBadRequest)
-			return
-		}
-		u, err := q.GetUser(ctx, id)
-		if err != nil {
-			http.Error(w, "not found", http.StatusNotFound)
-			return
-		}
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(u)
 	})
 
 	addr := getenv("APP_ADDR", ":2112")
