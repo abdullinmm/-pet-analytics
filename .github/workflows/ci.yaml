@@ -1,13 +1,26 @@
-name: CI
-
+name: ci
 on:
   push:
-    branches: [ "main" ]
+    branches: [ main ]
   pull_request:
 
 jobs:
-  build-test:
+  test:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: app
+          POSTGRES_PASSWORD: app
+          POSTGRES_DB: petdb
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U app -d petdb"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 12
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -15,10 +28,29 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.24'
+          go-version: '1.22.x'
 
-      - name: Build
-        run: go build ./...
+      - name: Install psql client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+          psql --version
 
-      - name: Test
-        run: go test -v ./...
+      - name: Wait for Postgres and apply schema
+        env:
+          PGPASSWORD: app
+        run: |
+          for i in {1..30}; do
+            if pg_isready -h 127.0.0.1 -p 5432 -U app -d petdb; then break; fi
+            sleep 1
+          done
+          psql -h 127.0.0.1 -p 5432 -U app -d petdb -f db/schema.sql -v ON_ERROR_STOP=1
+
+      - name: Go test
+        env:
+          PGURL: postgres://app:app@127.0.0.1:5432/petdb?sslmode=disable
+        run: |
+          go version
+          go env GOPATH GOBIN
+          go mod download
+          go test ./... -v -count=1

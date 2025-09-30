@@ -25,3 +25,9 @@
 
 ## Endpoints (DB)
 - GET /users/{id} — возвращает пользователя по id (sqlc.GetUser)
+
+## CI
+See `.github/workflows/ci.yml`:
+- Postgres service (user=app, db=petdb) with healthcheck
+- Apply `db/schema.sql` via `psql`
+- `go test ./...` with `PGURL`
