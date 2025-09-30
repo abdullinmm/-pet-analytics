@@ -25,3 +25,11 @@
 
 ## Endpoints (DB)
 - GET /users/{id} — возвращает пользователя по id (sqlc.GetUser)
+
+## Users API
+- POST /users — создать пользователя; тело: {"email":"a@b.c","name":"Alice"}; ответы: 201 + JSON или 400/409.
+- GET /users — параметры limit (1..1000), offset (>=0); ответ: список пользователей.
+
+## Dev tips
+- Generate: sqlc generate при изменении схемы/запросов.
+- Run DB: docker compose up -d postgres; check: docker compose ps (healthy).
