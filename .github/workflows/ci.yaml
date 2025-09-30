@@ -43,6 +43,26 @@ jobs:
       - name: Generate code with sqlc
         run: sqlc generate
 
+      - name: Wait for Postgres to be healthy
+        run: |
+          for i in {1..30}; do
+            pg_isready -h localhost -p 5432 -U app -d petdb && exit 0
+            sleep 1
+          done
+          exit 1
+
+      - name: Init DB schema
+        run: |
+          PSQL="psql postgresql://app:app@localhost:5432/petdb -v ON_ERROR_STOP=1"
+          $PSQL -f db/schema.sql
+          $PSQL -c '\dt'
+
+      # uncomment if you need seed data for tests
+      - name: Seed test data (optional)
+        run: |
+          psql postgresql://app:app@localhost:5432/petdb -c \
+            "INSERT INTO users (email,name) VALUES ('demo@example.com','Demo') ON CONFLICT DO NOTHING;"
+
       - name: Build
         run: go build ./...
 
