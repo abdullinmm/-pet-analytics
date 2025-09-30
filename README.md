@@ -34,6 +34,13 @@
 - Generate: sqlc generate при изменении схемы/запросов.
 - Run DB: docker compose up -d postgres; check: docker compose ps (healthy).
 
+# Tests + CI + PostgreSQL
+
+## Local
+- docker compose up -d postgres
+- docker compose exec -T postgres psql -U app -d petdb -f db/schema.sql
+- PGURL="postgres://app:app@127.0.0.1:5432/petdb?sslmode=disable" go test ./... -v -count=1
+
 ## CI
 See `.github/workflows/ci.yml`:
 - Postgres service (user=app, db=petdb) with healthcheck
