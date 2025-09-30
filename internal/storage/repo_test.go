@@ -1,19 +1,10 @@
+// internal/storage/repo_test.go
 package storage
 
 import (
 	"context"
-	"os"
 	"testing"
 )
-
-func pgURL() string {
-	u := os.Getenv("PGURL")
-	if u == "" {
-		// локальный дефолт для удобства
-		u = "postgres://app:app@127.0.0.1:5432/petdb?sslmode=disable"
-	}
-	return u
-}
 
 func TestRepo_NotesLifecycle(t *testing.T) {
 	r, err := New(pgURL())
