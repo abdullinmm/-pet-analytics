@@ -6,13 +6,11 @@
 
 ## Run
 
-Linux/macOS:
-APP_ADDR=:2112 go run ./cmd/api
-Windows (PowerShell):
-$env:APP_ADDR=":2112"; go run ./cmd/api
+- Linux/macOS: APP_ADDR=:2112 go run ./cmd/api
+- Windows (PowerShell): $env:APP_ADDR=":2112"; go run ./cmd/api
 # Проверка:
-# curl localhost:2112/healthz
-# curl localhost:2112/metrics
+curl localhost:2112/healthz
+curl localhost:2112/metrics
 
 ## Metrics
 
@@ -20,11 +18,10 @@ $env:APP_ADDR=":2112"; go run ./cmd/api
 - Кастомные метрики добавляются через prometheus.NewCounter/Histogram и регистрацию в DefaultRegisterer
 
 ## Database (local)
-
-- Run Postgres: docker compose up -d postgres
-- Default DSN: postgres://app:app@localhost:5432/petdb
-- sqlc: config in sqlc.yaml; generate code: sqlc generate (pgx/v5)
+- Start: docker compose up -d postgres
+- Schema: docker compose exec -T postgres psql -U app -d petdb -f db/schema.sql
+- Generate: sqlc generate  (или docker run --rm -v "${PWD}:/src" -w /src sqlc/sqlc generate)
+- DSN: postgres://app:app@localhost:5432/petdb
 
 ## Endpoints (DB)
-- GET /users/{id} — вернуть пользователя по id (sqlc.GetUser)
-
+- GET /users/{id} — возвращает пользователя по id (sqlc.GetUser)
