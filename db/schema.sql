@@ -1,7 +1,8 @@
-create table if not exists users (
-  id bigserial primary key,
-  email text not null unique,
-  created_at timestamptz not null default now()
+CREATE TABLE IF NOT EXISTS users (
+  id BIGSERIAL PRIMARY KEY,
+  email TEXT NOT NULL UNIQUE,
+  name TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 create table if not exists notes (
