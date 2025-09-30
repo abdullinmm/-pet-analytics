@@ -57,11 +57,16 @@ jobs:
           $PSQL -f db/schema.sql
           $PSQL -c '\dt'
 
-      # uncomment if you need seed data for tests
-      - name: Seed test data (optional)
+      - name: Seed test data
         run: |
-          psql postgresql://app:app@localhost:5432/petdb -c \
-            "INSERT INTO users (email,name) VALUES ('demo@example.com','Demo') ON CONFLICT DO NOTHING;"
+          psql postgresql://app:app@localhost:5432/petdb -v ON_ERROR_STOP=1 -f db/seed.sql
+
+
+      # uncomment if you need seed data for tests
+      # - name: Seed test data (optional)
+      #  run: |
+      #    psql postgresql://app:app@localhost:5432/petdb -c \
+      #      "INSERT INTO users (email,name) VALUES ('demo@example.com','Demo') ON CONFLICT DO NOTHING;"
 
       - name: Build
         run: go build ./...

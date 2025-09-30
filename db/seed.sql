@@ -1,13 +1,13 @@
-begin;
-truncate table notes restart identity cascade;
-truncate table users restart identity cascade;
+BEGIN;
+TRUNCATE TABLE notes RESTART IDENTITY CASCADE;
+TRUNCATE TABLE users RESTART IDENTITY CASCADE;
 
-insert into users (email) values
-  ('test1@example.com'),
-  ('test2@example.com');
+INSERT INTO users (email, name) VALUES
+  ('test1@example.com', 'Test One'),
+  ('test2@example.com', 'Test Two');
 
-insert into notes (user_id, body) values
+INSERT INTO notes (user_id, body) VALUES
   (1, 'hello'),
   (1, 'world'),
   (2, 'note-2-1');
-commit;
+COMMIT;

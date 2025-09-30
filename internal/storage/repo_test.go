@@ -4,6 +4,9 @@ package storage
 import (
 	"context"
 	"testing"
+
+	appdb "github.com/abdullinmm/pet-analytics/internal/db"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 func TestRepo_NotesLifecycle(t *testing.T) {
@@ -13,10 +16,22 @@ func TestRepo_NotesLifecycle(t *testing.T) {
 	}
 	ctx := context.Background()
 
-	uid, err := r.CreateUser(ctx, "test@example.com")
+	// отдельный пул для sqlc на том же URL
+	pool, err := pgxpool.New(ctx, pgURL())
 	if err != nil {
-		t.Fatalf("create user: %v", err)
+		t.Fatalf("pool: %v", err)
 	}
+	defer pool.Close()
+	q := appdb.New(pool)
+
+	u, err := q.CreateUser(ctx, appdb.CreateUserParams{
+		Email: "test@example.com",
+		Name:  "Test User",
+	})
+	if err != nil {
+		t.Fatalf("create user via sqlc: %v", err)
+	}
+	uid := u.ID
 
 	if _, err := r.AddNote(ctx, uid, "hello"); err != nil {
 		t.Fatalf("add note: %v", err)
