@@ -9,8 +9,8 @@
 - Linux/macOS: APP_ADDR=:2112 go run ./cmd/api
 - Windows (PowerShell): $env:APP_ADDR=":2112"; go run ./cmd/api
 # Проверка:
-curl localhost:2112/healthz
-curl localhost:2112/metrics
+- curl localhost:2112/healthz
+- curl localhost:2112/metrics
 
 ## Metrics
 
