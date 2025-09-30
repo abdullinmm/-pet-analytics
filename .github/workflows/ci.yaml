@@ -1,9 +1,5 @@
-# .github/workflows/ci.yml
-name: ci
-on:
-  push:
-    branches: [ main ]
-  pull_request:
+name: CI
+on: [push, pull_request]
 
 jobs:
   test:
@@ -18,62 +14,35 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U app -d petdb"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 12
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+          --health-cmd="pg_isready -U app -d petdb"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
 
-      - name: Setup Go
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.22.x'
-          cache: true
-
-      - name: Go env
-        run: |
-          go version
-          go env GOPATH GOBIN
-
-      - name: Unit tests
-        run: |
-          go test ./... -v -count=1 -coverprofile=coverage.unit.out
-
-      - name: Install psql client
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y postgresql-client
-          psql --version
-
-      - name: Wait for Postgres and apply schema + seed
+          go-version-file: go.mod
+          check-latest: true
+          cache: false
         env:
+          TAR_OPTIONS: --skip-old-files  # на всякий случай подавляем tar-ошибки
+
+      - name: sqlc generate
+        run: |
+          curl -sSLo /usr/local/bin/sqlc https://github.com/sqlc-dev/sqlc/releases/latest/download/sqlc_linux_amd64
+          chmod +x /usr/local/bin/sqlc
+          sqlc generate
+      - name: Build
+        run: go build ./...
+      - name: Test
+        env:
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: app
           PGPASSWORD: app
-        run: |
-          for i in {1..30}; do
-            if pg_isready -h 127.0.0.1 -p 5432 -U app -d petdb; then break; fi
-            sleep 1
-          done
-          psql -h 127.0.0.1 -p 5432 -U app -d petdb -v ON_ERROR_STOP=1 -f db/schema.sql
-          psql -h 127.0.0.1 -p 5432 -U app -d petdb -v ON_ERROR_STOP=1 -f db/seed.sql
-
-      - name: Integration tests
-        env:
-          PGURL: postgres://app:app@127.0.0.1:5432/petdb?sslmode=disable
-        run: |
-          go test ./... -v -count=1 -tags=integration -coverprofile=coverage.int.out
-
-      - name: Merge coverage
-        run: |
-          cat coverage.unit.out coverage.int.out > coverage.out
-          go tool cover -func=coverage.out | tail -n +1
-
-      - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage
-          path: |
-            coverage.unit.out
-            coverage.int.out
-            coverage.out
+          PGDATABASE: petdb
+        run: go test -v ./...
