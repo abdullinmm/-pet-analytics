@@ -1,9 +1,12 @@
 name: CI
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
 
 jobs:
   test:
     runs-on: ubuntu-latest
+
     services:
       postgres:
         image: postgres:16
@@ -20,7 +23,8 @@ jobs:
           --health-retries=5
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -29,15 +33,19 @@ jobs:
           check-latest: true
           cache: false
         env:
-          TAR_OPTIONS: --skip-old-files  # на всякий случай подавляем tar-ошибки
+          TAR_OPTIONS: --skip-old-files
 
-      - name: sqlc generate
-        run: |
-          curl -sSLo /usr/local/bin/sqlc https://github.com/sqlc-dev/sqlc/releases/latest/download/sqlc_linux_amd64
-          chmod +x /usr/local/bin/sqlc
-          sqlc generate
+      - name: Install sqlc
+        uses: sqlc-dev/setup-sqlc@v4
+        with:
+          sqlc-version: '1.29.0'
+
+      - name: Generate code with sqlc
+        run: sqlc generate
+
       - name: Build
         run: go build ./...
+
       - name: Test
         env:
           PGHOST: localhost
