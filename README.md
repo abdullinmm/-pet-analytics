@@ -1,48 +1,45 @@
 # Pet Analytics
 
-## Endpoints
-- /healthz — возвращает 200 OK и JSON {status, time}; используется для liveness/readiness в Kubernetes
-- /metrics — отдаёт метрики Prometheus через promhttp.Handler(); скрейпится Prometheus
+Pet Analytics — сервис для сбора и анализа метрик.  
+Выполнен с использованием Go (REST API), PostgreSQL, Docker, автоматизация CI/CD через GitHub Actions, покрыт тестами.
 
-## Run
+## Ключевые возможности
 
-- Linux/macOS: APP_ADDR=:2112 go run ./cmd/api
-- Windows (PowerShell): $env:APP_ADDR=":2112"; go run ./cmd/api
-# Проверка:
-- curl localhost:2112/healthz
-- curl localhost:2112/metrics
+- Эндпоинты для healthcheck и мониторинга (Prometheus /metrics)
+- Пользовательский CRUD и пагинация
+- Стандарты разработки: разделение зависимостей, модульность, тестируемость
+- Документированные SQL-модули (sqlc, migrations), кастомные метрики
+- Локальный запуск через Docker Compose
+- Оформленная документация и инструкции по развертыванию
 
-## Metrics
+## Быстрый старт
 
-- /metrics экспонирует стандартные метрики go_* и process_* через promhttp.Handler()
-- Кастомные метрики добавляются через prometheus.NewCounter/Histogram и регистрацию в DefaultRegisterer
+docker compose up -d postgres 
+go run ./cmd/api
 
-## Database (local)
-- Start: docker compose up -d postgres
-- Schema: docker compose exec -T postgres psql -U app -d petdb -f db/schema.sql
-- Generate: sqlc generate  (или docker run --rm -v "${PWD}:/src" -w /src sqlc/sqlc generate)
-- DSN: postgres://app:app@localhost:5432/petdb
 
-## Endpoints (DB)
-- GET /users/{id} — возвращает пользователя по id (sqlc.GetUser)
+## CI/CD
 
-## Users API
-- POST /users — создать пользователя; тело: {"email":"a@b.c","name":"Alice"}; ответы: 201 + JSON или 400/409.
-- GET /users — параметры limit (1..1000), offset (>=0); ответ: список пользователей.
+- Встроен pipeline GitHub Actions: тесты, линтинг, автосборка, healthchecks DB, автоматическое применение миграций.
+- Описаны все стадии CI в `.github/workflows/ci.yml`.
 
-## Dev tips
-- Generate: sqlc generate при изменении схемы/запросов.
-- Run DB: docker compose up -d postgres; check: docker compose ps (healthy).
+## Архитектура
 
-# Tests + CI + PostgreSQL
+- Архитектурная диаграмма (см. файл `/docs/architecture.png`).
+- Схема базы, описание слоев приложения.
+- Вся бизнес-логика вынесена в отдельные модули.
 
-## Local
-- docker compose up -d postgres
-- docker compose exec -T postgres psql -U app -d petdb -f db/schema.sql
-- PGURL="postgres://app:app@127.0.0.1:5432/petdb?sslmode=disable" go test ./... -v -count=1
+## Тесты
 
-## CI
-See `.github/workflows/ci.yml`:
-- Postgres service (user=app, db=petdb) with healthcheck
-- Apply `db/schema.sql` via `psql`
-- `go test ./...` with `PGURL`
+- Описаны unit/integration-тесты, покрытие на уровне X%.
+- Запуск: `go test ./... -v`  
+- Badge: ![Coverage](URL_TO_BADGE)  ![CI](URL_TO_CI_BADGE)
+
+## Контакты
+
+Marsel Abdullin  
+Email: abdullinmm@gmail.com  
+Telegram: [@abdullin_marsel](https://t.me/abdullin_marsel)  
+[GitHub](https://github.com/abdullinmm) | [LinkedIn](https://www.linkedin.com/in/marsel-abdullin-291238121/)
+
+---
