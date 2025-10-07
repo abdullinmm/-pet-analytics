@@ -21,8 +21,8 @@ Microservice for collecting and analyzing metrics. Built with Go (REST API), Pos
 
 ## Quick Start
 
-docker compose up -d postgres
-go run ./cmd/api
+- docker compose up -d postgres
+- go run ./cmd/api
 
 
 ---
